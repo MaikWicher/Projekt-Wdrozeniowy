@@ -1,18 +1,28 @@
 import type { VisualizationTab } from "../../types/visualization";
+import { ChartView } from "./visualizations/ChartView";
+import { GraphView } from "./visualizations/GraphView";
+import { DashboardView } from "./visualizations/DashboardView";
+import { ComparisonView } from "./visualizations/ComparisonView";
 
-export const VisualizationRenderer: React.FC<{ tab: VisualizationTab }> = ({
-  tab
-}) => {
+interface Props {
+  tab: VisualizationTab;
+}
+
+export const VisualizationRenderer: React.FC<Props> = ({ tab }) => {
   switch (tab.type) {
     case "chart":
-      return <div>📈 Widok wykresów</div>;
+      return <ChartView tab={tab} />;
+
     case "graph":
-      return <div>🕸 Graf sieciowy</div>;
+      return <GraphView tab={tab} />;
+
     case "dashboard":
-      return <div>📊 Dashboard analityczny</div>;
+      return <DashboardView tab={tab} />;
+
     case "comparison":
-      return <div>🔀 Widok porównawczy</div>;
+      return <ComparisonView tab={tab} />;
+
     default:
-      return null;
+      return <div>Nieznany typ wizualizacji</div>;
   }
 };

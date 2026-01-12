@@ -15,12 +15,11 @@ export const MainPanel: React.FC = () => {
     setTabs
   } = useVisualizationTabs();
 
-
   const handleReorder = (newTabs: typeof tabs) => {
     setTabs(newTabs);
   };
 
-  const activeTab = tabs.find(t => t.id === activeTabId);
+  const activeTab = tabs.find(t => t.id === activeTabId); // ← poprawione
 
   return (
     <div className="main-panel">
@@ -44,3 +43,4 @@ export const MainPanel: React.FC = () => {
     </div>
   );
 };
+

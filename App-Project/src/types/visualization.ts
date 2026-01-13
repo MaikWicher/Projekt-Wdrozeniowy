@@ -4,14 +4,25 @@ export type VisualizationType =
   | "chart"
   | "graph"
   | "dashboard"
-  | "comparison";
+  | "comparison"
+
+export type ChartType =
+  | "line"
+  | "bar"
+  | "column"
+  | "pie"
+  | "flow"
+  | "star"
+  | "stat"
+  | "candlestick";
 
 export interface VisualizationTab {
   id: string;
   title: string;
   type: VisualizationType;
+  chartType?: ChartType;
   icon: IconType;
-  content: unknown;
+  content: any;
   isDirty: boolean;
   isClosable: boolean;
   isPinned: boolean;

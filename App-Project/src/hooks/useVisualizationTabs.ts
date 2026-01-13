@@ -1,21 +1,13 @@
 import { useReducer } from "react";
-import type { VisualizationTab, VisualizationType } from "../types/visualization";
-import {
-  FaChartLine,
-  FaProjectDiagram,
-  FaTachometerAlt,
-  FaColumns
-} from "react-icons/fa";
+import type { VisualizationTab, VisualizationType, ChartType } from "../types/visualization";
+import { FaChartLine, FaProjectDiagram, FaTachometerAlt, FaColumns } from "react-icons/fa";
 
-type TabsState = {
-  tabs: VisualizationTab[];
-  activeTabId: string | null;
-};
+type State = { tabs: VisualizationTab[]; activeTabId: string | null };
 
 type Action =
-  | { type: "ADD_TAB"; tabType: VisualizationType }
-  | { type: "CLOSE_TAB"; tabId: string }
+  | { type: "ADD_TAB"; tabType: VisualizationType; chartType?: ChartType }
   | { type: "ACTIVATE_TAB"; tabId: string }
+  | { type: "CLOSE_TAB"; tabId: string }
   | { type: "PIN_TAB"; tabId: string }
   | { type: "REORDER_TABS"; tabs: VisualizationTab[] };
 
@@ -23,13 +15,14 @@ const iconMap = {
   chart: FaChartLine,
   graph: FaProjectDiagram,
   dashboard: FaTachometerAlt,
-  comparison: FaColumns
+  comparison: FaColumns,
 };
 
-const createTab = (type: VisualizationType): VisualizationTab => ({
+const createTab = (type: VisualizationType, chartType?: ChartType): VisualizationTab => ({
   id: crypto.randomUUID(),
-  title: "Nowa wizualizacja",
+  title: chartType ? `Wykres: ${chartType}` : "Nowa wizualizacja",
   type,
+  chartType,
   icon: iconMap[type],
   content: null,
   isDirty: false,
@@ -37,39 +30,20 @@ const createTab = (type: VisualizationType): VisualizationTab => ({
   isPinned: false
 });
 
-const reducer = (state: TabsState, action: Action): TabsState => {
+const reducer = (state: State, action: Action): State => {
   switch (action.type) {
-    case "ADD_TAB": {
-      const tab = createTab(action.tabType);
-      return { tabs: [...state.tabs, tab], activeTabId: tab.id };
-    }
-
+    case "ADD_TAB":
+      const newTab = createTab(action.tabType, action.chartType);
+      return { tabs: [...state.tabs, newTab], activeTabId: newTab.id };
     case "ACTIVATE_TAB":
       return { ...state, activeTabId: action.tabId };
-
     case "PIN_TAB":
-      return {
-        ...state,
-        tabs: state.tabs.map(t =>
-          t.id === action.tabId ? { ...t, isPinned: !t.isPinned } : t
-        )
-      };
-
-    case "CLOSE_TAB": {
-      const tab = state.tabs.find(t => t.id === action.tabId);
-      if (!tab || tab.isPinned) return state;
-
+      return { ...state, tabs: state.tabs.map(t => t.id === action.tabId ? { ...t, isPinned: !t.isPinned } : t) };
+    case "CLOSE_TAB":
       const tabs = state.tabs.filter(t => t.id !== action.tabId);
-      let activeTabId = state.activeTabId;
-      if (state.activeTabId === action.tabId) {
-        activeTabId = tabs.length ? tabs[tabs.length - 1].id : null;
-      }
-      return { tabs, activeTabId };
-    }
-
+      return { tabs, activeTabId: tabs.length ? tabs[tabs.length-1].id : null };
     case "REORDER_TABS":
       return { ...state, tabs: action.tabs };
-
     default:
       return state;
   }
@@ -80,11 +54,10 @@ export const useVisualizationTabs = () => {
 
   return {
     ...state,
-    addTab: (type: VisualizationType) => dispatch({ type: "ADD_TAB", tabType: type }),
-    closeTab: (id: string) => dispatch({ type: "CLOSE_TAB", tabId: id }),
+    addTab: (type: VisualizationType, chartType?: ChartType) => dispatch({ type: "ADD_TAB", tabType: type, chartType }),
     activateTab: (id: string) => dispatch({ type: "ACTIVATE_TAB", tabId: id }),
+    closeTab: (id: string) => dispatch({ type: "CLOSE_TAB", tabId: id }),
     pinTab: (id: string) => dispatch({ type: "PIN_TAB", tabId: id }),
-    setTabs: (tabs: VisualizationTab[]) => dispatch({ type: "REORDER_TABS", tabs }),
     reorderTabs: (tabs: VisualizationTab[]) => dispatch({ type: "REORDER_TABS", tabs })
   };
 };

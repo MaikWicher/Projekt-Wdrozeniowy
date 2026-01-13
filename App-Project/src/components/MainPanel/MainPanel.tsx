@@ -1,25 +1,11 @@
-import React from "react";
 import { useVisualizationTabs } from "../../hooks/useVisualizationTabs";
 import { TabsBar } from "./TabsBar";
 import { VisualizationRenderer } from "./VisualizationRenderer";
 import "./mainPanel.css";
 
 export const MainPanel: React.FC = () => {
-  const {
-    tabs,
-    activeTabId,
-    addTab,
-    closeTab,
-    activateTab,
-    pinTab,
-    setTabs
-  } = useVisualizationTabs();
-
-  const handleReorder = (newTabs: typeof tabs) => {
-    setTabs(newTabs);
-  };
-
-  const activeTab = tabs.find(t => t.id === activeTabId); // ← poprawione
+  const { tabs, activeTabId, addTab, closeTab, activateTab, pinTab, reorderTabs } = useVisualizationTabs();
+  const activeTab = tabs.find(t => t.id === activeTabId) ?? null;
 
   return (
     <div className="main-panel">
@@ -30,7 +16,7 @@ export const MainPanel: React.FC = () => {
         onClose={closeTab}
         onActivate={activateTab}
         onPin={pinTab}
-        onReorder={handleReorder}
+        onReorder={reorderTabs}
       />
 
       <div className="tab-content">
@@ -43,4 +29,3 @@ export const MainPanel: React.FC = () => {
     </div>
   );
 };
-

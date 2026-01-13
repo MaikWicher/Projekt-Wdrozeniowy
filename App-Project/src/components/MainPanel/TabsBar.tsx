@@ -1,82 +1,57 @@
-import type { VisualizationTab, VisualizationType } from "../../types/visualization";
+import type { VisualizationTab, VisualizationType, ChartType } from "../../types/visualization";
 import { TabItem } from "./TabItem";
 import "./mainPanel.css";
-
-import { DndContext, PointerSensor, closestCenter } from "@dnd-kit/core";
-import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
-import { useSensor, useSensors } from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
 import React, { useState, useRef, useEffect } from "react";
-
 import { FaChartLine, FaProjectDiagram, FaTachometerAlt, FaColumns } from "react-icons/fa";
 
 interface Props {
   tabs: VisualizationTab[];
   activeTabId: string | null;
-  onAdd(type: VisualizationType): void;
+  onAdd(type: VisualizationType, chartType?: ChartType): void;
   onClose(id: string): void;
   onActivate(id: string): void;
   onPin(id: string): void;
   onReorder(tabs: VisualizationTab[]): void;
 }
 
-// Mapowanie typu na ikonę
-const iconMap = {
-  chart: FaChartLine,
-  graph: FaProjectDiagram,
-  dashboard: FaTachometerAlt,
-  comparison: FaColumns
-};
+const chartTypes: { label: string; value: ChartType }[] = [
+  { label: "Wykres liniowy", value: "line" },
+  { label: "Wykres słupkowy", value: "bar" },
+  { label: "Wykres kolumnowy", value: "column" },
+  { label: "Wykres kołowy", value: "pie" },
+  { label: "Wykres przepływowy", value: "flow" },
+  { label: "Wykres gwiazdowy", value: "star" },
+  { label: "Wykres statystyczny", value: "stat" },
+  { label: "Wykres giełdowy", value: "candlestick" }
+];
 
-// Polskie napisy dla podglądu
-const visualizationLabels: Record<VisualizationType, string> = {
-  chart: "Wykres",
-  graph: "Graf",
-  dashboard: "Dashboard",
-  comparison: "Widok porównawczy"
-};
-
-export const TabsBar: React.FC<Props> = ({
-  tabs,
-  activeTabId,
-  onAdd,
-  onClose,
-  onActivate,
-  onPin,
-  onReorder
-}) => {
+export const TabsBar: React.FC<Props> = ({ tabs, activeTabId, onAdd, onClose, onActivate, onPin, onReorder }) => {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const [showMenu, setShowMenu] = useState(false);
-  const [hoveredType, setHoveredType] = useState<VisualizationType | null>(null);
+  const [hoverChart, setHoverChart] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
-
     const oldIndex = tabs.findIndex(t => t.id === active.id);
     const newIndex = tabs.findIndex(t => t.id === over.id);
-
     onReorder(arrayMove(tabs, oldIndex, newIndex));
   };
 
-  // Zamknięcie menu po kliknięciu poza dropdown
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setShowMenu(false);
+        setHoverChart(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  const types: { label: string; value: VisualizationType; icon: any }[] = [
-    { label: "Wykres", value: "chart", icon: FaChartLine },
-    { label: "Graf", value: "graph", icon: FaProjectDiagram },
-    { label: "Dashboard", value: "dashboard", icon: FaTachometerAlt },
-    { label: "Widok porównawczy", value: "comparison", icon: FaColumns }
-  ];
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -94,39 +69,39 @@ export const TabsBar: React.FC<Props> = ({
           ))}
 
           <div className="tab-add-container" ref={menuRef}>
-            <button className="tab-add" onClick={() => setShowMenu(!showMenu)}>+</button>
+            <button className="tab-add" onClick={() => setShowMenu(v => !v)}>+</button>
 
             {showMenu && (
               <div className="tab-add-menu">
-                {types.map(t => {
-                  const Icon = t.icon;
-                  const isHovered = hoveredType === t.value;
-
-                  return (
-                    <div
-                      key={t.value}
-                      className="tab-add-menu-item"
-                      onMouseEnter={() => setHoveredType(t.value)}
-                      onMouseLeave={() => setHoveredType(null)}
-                      onClick={() => {
-                        onAdd(t.value);
-                        setShowMenu(false);
-                      }}
-                      style={{ display: "flex", alignItems: "center", position: "relative" }}
-                    >
-                      <Icon style={{ marginRight: 8 }} />
-                      <span>{t.label}</span>
-
-                      {isHovered && (
-                        <div className="tab-add-preview">
-                          <div className="preview-box">
-                            Podgląd: {visualizationLabels[t.value]}
-                          </div>
+                <div
+                  className="tab-add-menu-item"
+                  onMouseEnter={() => setHoverChart(true)}
+                  onMouseLeave={() => setHoverChart(false)}
+                >
+                  <FaChartLine style={{ marginRight: 8 }} />
+                  Wykres
+                  {hoverChart && (
+                    <div className="tab-add-submenu" style={{ position: 'absolute', left: '100%', top: 0 }}>
+                      {chartTypes.map(ct => (
+                        <div key={ct.value} className="tab-add-menu-item" onClick={() => { onAdd("chart", ct.value); setShowMenu(false); setHoverChart(false); }}>
+                          {ct.label}
                         </div>
-                      )}
+                      ))}
                     </div>
-                  );
-                })}
+                  )}
+                </div>
+
+                <div className="tab-add-menu-item" onClick={() => { onAdd("graph"); setShowMenu(false); }}>
+                  <FaProjectDiagram style={{ marginRight: 8 }} /> Graf
+                </div>
+
+                <div className="tab-add-menu-item" onClick={() => { onAdd("dashboard"); setShowMenu(false); }}>
+                  <FaTachometerAlt style={{ marginRight: 8 }} /> Dashboard
+                </div>
+
+                <div className="tab-add-menu-item" onClick={() => { onAdd("comparison"); setShowMenu(false); }}>
+                  <FaColumns style={{ marginRight: 8 }} /> Widok porównawczy
+                </div>
               </div>
             )}
           </div>

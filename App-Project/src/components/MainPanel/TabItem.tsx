@@ -74,7 +74,7 @@ export const TabItem: React.FC<Props> = ({ tab, active, onActivate, onClose, onP
           }}
         >
           <div style={{
-            display: "inline-block",
+            display: 'inline-block',
             background: '#2d2d2d',
             color: '#fff',
             padding: '4px 8px',
